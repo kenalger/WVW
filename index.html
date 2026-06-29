@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WVW ERP — Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="WVW ERP — choose a workspace to sign in.">
+  <link rel="icon" type="image/png" href="assets/wvw-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    /* ── Theme tokens (set by JS via applyTheme) ── */
+    :root {
+      --paper:#FFFFFF; --surface:#F4F7FB; --ink:#0F1B2D; --sub:#475569; --dim:#94A3B8;
+      --line:#E2E8F0; --ok:#1E9E5A; --accent:#1E5BD6; --accent-h:#1648AB;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: var(--paper);
+      font-family: 'IBM Plex Mono', ui-monospace, monospace;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection { background: var(--accent); color: #fff; }
+
+    .screen {
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      transition: background .3s ease, color .3s ease;
+    }
+    .accent-bar { height: 4px; background: var(--accent); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 48px); }
+
+    /* ── Header ── */
+    header.bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { width: 30px; height: 30px; object-fit: contain; }
+    .brand .name {
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px;
+      letter-spacing: -.02em; color: var(--ink);
+    }
+    .brand .kicker { font-size: 11px; font-weight: 500; letter-spacing: .22em; color: var(--dim); }
+    .bar-right { display: flex; align-items: center; gap: 16px; }
+    .clock { font-size: 11.5px; font-weight: 500; letter-spacing: .08em; color: var(--dim); }
+    .support {
+      font-size: 12px; font-weight: 500; letter-spacing: .06em;
+      color: var(--sub); text-decoration: none; transition: color .15s;
+    }
+    .support:hover, a[data-lnk]:hover { color: var(--accent); }
+
+    .toggle { display: inline-flex; border: 1px solid var(--ink); }
+    .toggle button {
+      border: none; cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+      letter-spacing: .1em; padding: 6px 11px;
+      background: transparent; color: var(--sub);
+      transition: background .2s, color .2s;
+    }
+    .toggle button:first-child { border-right: 1px solid var(--ink); }
+    .toggle button.on { background: var(--accent); color: #fff; }
+
+    /* ── Hero ── */
+    .hero { padding: clamp(40px, 7vw, 72px) 0 30px; }
+    .hero .eyebrow {
+      font-size: 12px; font-weight: 500; letter-spacing: .24em;
+      color: var(--accent); margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: clamp(2.4rem, 5.5vw, 4rem); line-height: .98;
+      letter-spacing: -.035em; color: var(--ink);
+    }
+    .hero p {
+      margin-top: 20px; font-size: 13px; line-height: 1.65;
+      color: var(--sub); max-width: 58ch;
+    }
+
+    /* ── Search ── */
+    .search {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; padding: 12px 0;
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    }
+    .field {
+      display: flex; align-items: center; gap: 0;
+      border: 1px solid var(--line); background: var(--surface);
+      min-width: min(360px, 100%); transition: border-color .18s;
+    }
+    .field:focus-within { border-color: var(--accent); }
+    .field .tag {
+      font-size: 11px; font-weight: 600; letter-spacing: .14em; color: var(--dim);
+      padding: 0 12px; border-right: 1px solid var(--line);
+      align-self: stretch; display: flex; align-items: center; background: var(--paper);
+    }
+    .field input {
+      border: none; outline: none; background: transparent;
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+      color: var(--ink); width: 100%; padding: 9px 12px;
+    }
+    .field input::placeholder { color: var(--dim); }
+    .search-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .hint { font-size: 10.5px; letter-spacing: .1em; color: var(--dim); }
+    .count { font-size: 11.5px; font-weight: 500; letter-spacing: .06em; color: var(--sub); white-space: nowrap; }
+
+    /* ── Workspace list ── */
+    .list { border-top: 2px solid var(--ink); }
+    a.ws {
+      display: grid;
+      grid-template-columns: 30px 64px minmax(0, 1fr) 44px;
+      gap: clamp(12px, 2.4vw, 28px);
+      align-items: start; padding: 32px 6px;
+      border-bottom: 1px solid var(--line);
+      text-decoration: none; color: var(--ink);
+      outline: none; -webkit-tap-highlight-color: transparent;
+    }
+    a.ws:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .ws-idx { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--accent); padding-top: 7px; }
+    .ws-logo {
+      width: 64px; height: 64px; object-fit: contain;
+      background: #fff; border: 1px solid var(--line); padding: 6px;
+    }
+    .ws-body { min-width: 0; }
+    .ws-title { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+    .ws-name {
+      font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+      font-size: clamp(1.55rem, 3.4vw, 2.15rem); letter-spacing: -.025em;
+      line-height: 1.02; color: var(--ink);
+      background-image: linear-gradient(currentColor, currentColor);
+      background-repeat: no-repeat; background-position: 0 100%;
+      background-size: 0 2px; transition: background-size .22s ease;
+    }
+    .ws-cat { font-size: 11px; font-weight: 500; letter-spacing: .16em; color: var(--accent); }
+    .ws-desc { margin-top: 12px; font-size: 12.5px; line-height: 1.65; color: var(--sub); max-width: 62ch; }
+    .ws-modules { margin-top: 16px; font-size: 11px; letter-spacing: .07em; line-height: 1.8; color: var(--dim); }
+    .ws-modules b { color: var(--sub); font-weight: 600; }
+    .ws-status { margin-top: 11px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 11.5px; letter-spacing: .05em; }
+    .ws-domain { color: var(--dim); }
+    .ws-op { display: inline-flex; align-items: center; gap: 7px; color: var(--ok); font-weight: 500; }
+    .ws-op span { width: 6px; height: 6px; background: currentColor; display: inline-block; }
+    .ws-arrow {
+      font-family: 'Space Grotesk', sans-serif; font-size: 26px; color: var(--accent);
+      align-self: center; justify-self: end;
+      display: inline-block; transition: transform .18s ease;
+    }
+    a.ws:hover .ws-arrow, a.ws:focus-visible .ws-arrow { transform: translateX(7px); }
+    a.ws:hover .ws-name, a.ws:focus-visible .ws-name { background-size: 100% 2px; }
+
+    /* ── Empty state ── */
+    .empty { border-top: 2px solid var(--ink); padding: 60px 6px; }
+    .empty .h { font-size: 13px; letter-spacing: .06em; color: var(--ink); }
+    .empty .s { margin-top: 8px; font-size: 11.5px; color: var(--dim); letter-spacing: .04em; }
+
+    /* ── Footer ── */
+    footer.foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; flex-wrap: wrap; padding: 26px 0 40px; margin-top: 36px;
+      border-top: 1px solid var(--line); font-size: 11px; letter-spacing: .06em; color: var(--dim);
+    }
+    footer.foot a { color: var(--sub); text-decoration: none; }
+    footer.foot a:hover { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      a.ws { grid-template-columns: 48px minmax(0, 1fr) 28px; }
+      .ws-idx { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="accent-bar"></div>
+    <div class="wrap">
+
+      <header class="bar">
+        <div class="brand">
+          <img src="assets/wvw-logo.png" alt="WVW" />
+          <span class="name">WVW</span>
+          <span class="kicker">ERP&thinsp;/&thinsp;ACCESS</span>
+        </div>
+        <div class="bar-right">
+          <span class="clock" id="clock"></span>
+          <a class="support" data-lnk href="mailto:support@wvwcloud.com">SUPPORT</a>
+          <div class="toggle">
+            <button id="btn-light" aria-label="Light mode">LT</button>
+            <button id="btn-dark" aria-label="Dark mode">DK</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="eyebrow">WVW ERP // SELECT WORKSPACE</div>
+        <h1>Choose a workspace.</h1>
+        <p>Each workspace runs its own secure sign-in. Select the operation you manage. Start typing anywhere to filter.</p>
+      </section>
+
+      <div class="search">
+        <label class="field">
+          <span class="tag">FIND</span>
+          <input id="search" type="text" placeholder="filter workspaces&hellip;" autocomplete="off" />
+        </label>
+        <div class="search-meta">
+          <span class="hint">TYPE TO FILTER &middot; ESC CLEARS</span>
+          <span class="count" id="count"></span>
+        </div>
+      </div>
+
+      <div id="list" class="list"></div>
+
+      <footer class="foot">
+        <span>&copy; <span id="year"></span> WVW ERP</span>
+        <span>ACCESS &mdash; <a data-lnk href="mailto:support@wvwcloud.com">support@wvwcloud.com</a></span>
+      </footer>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var ACCENT = '#1E5BD6';
+
+      var workspaces = [
+        {
+          id: 'rjl', name: 'RJL Milling', category: 'MILLING ERP',
+          url: 'https://rjl.wvwcloud.com/login', domain: 'rjl.wvwcloud.com',
+          logo: 'assets/rjl-logo.png',
+          desc: 'Rice & grain milling operations — run production, sales, procurement, and accounting from one system.',
+          modules: ['PRODUCTION', 'SALES', 'PROCUREMENT', 'INVENTORY', 'ACCOUNTING']
+        },
+        {
+          id: 'xavi', name: 'Xavi Hardware', category: 'RETAIL ERP',
+          url: 'https://xavi.wvwcloud.com/login', domain: 'xavi.wvwcloud.com',
+          logo: 'assets/xavi-logo.jpg',
+          desc: 'Hardware retail and inventory — point of sale, stock control, suppliers, and accounting.',
+          modules: ['POINT OF SALE', 'INVENTORY', 'SUPPLIERS', 'ACCOUNTING']
+        }
+      ];
+
+      var query = '';
+      var dark = false;
+
+      var els = {
+        list: document.getElementById('list'),
+        count: document.getElementById('count'),
+        clock: document.getElementById('clock'),
+        year: document.getElementById('year'),
+        search: document.getElementById('search'),
+        light: document.getElementById('btn-light'),
+        dark: document.getElementById('btn-dark')
+      };
+
+      // ── Theme ──
+      function applyTheme() {
+        var base = dark ? {
+          '--paper': '#0B1220', '--surface': '#121C2E', '--ink': '#EAF1FB',
+          '--sub': '#9FB0C7', '--dim': '#5E708C', '--line': '#213049', '--ok': '#34C77B'
+        } : {
+          '--paper': '#FFFFFF', '--surface': '#F4F7FB', '--ink': '#0F1B2D',
+          '--sub': '#475569', '--dim': '#94A3B8', '--line': '#E2E8F0', '--ok': '#1E9E5A'
+        };
+        base['--accent'] = dark ? 'color-mix(in srgb, ' + ACCENT + ', #fff 16%)' : ACCENT;
+        base['--accent-h'] = 'color-mix(in srgb, ' + ACCENT + ', #000 18%)';
+        var root = document.documentElement;
+        Object.keys(base).forEach(function (k) { root.style.setProperty(k, base[k]); });
+        root.setAttribute('data-theme', dark ? 'dark' : 'light');
+        els.light.classList.toggle('on', !dark);
+        els.dark.classList.toggle('on', dark);
+      }
+
+      function setDark(v) {
+        dark = v;
+        applyTheme();
+        try { localStorage.setItem('wvw-theme', v ? 'dark' : 'light'); } catch (e) {}
+      }
+
+      function initTheme() {
+        try {
+          var saved = localStorage.getItem('wvw-theme');
+          if (saved === 'dark' || saved === 'light') {
+            dark = saved === 'dark';
+          } else if (window.matchMedia) {
+            dark = matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+        } catch (e) {}
+        applyTheme();
+      }
+
+      // ── Helpers ──
+      function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+      function pad(n) { return String(n).padStart(2, '0'); }
+
+      // ── Render list ──
+      function render() {
+        var q = query.trim().toLowerCase();
+        var visible = workspaces.filter(function (w) {
+          if (!q) return true;
+          var hay = (w.name + ' ' + w.category + ' ' + w.desc + ' ' + w.domain + ' ' + w.modules.join(' ')).toLowerCase();
+          return hay.indexOf(q) !== -1;
+        });
+
+        var total = workspaces.length;
+        els.count.textContent = q ? (visible.length + ' / ' + total + ' SHOWN') : (total + ' WORKSPACES');
+
+        if (visible.length === 0) {
+          els.list.className = 'empty';
+          els.list.innerHTML =
+            '<div class="h">NO MATCHES &mdash; &ldquo;' + esc(query) + '&rdquo;</div>' +
+            '<div class="s">Adjust the filter, or contact support for access.</div>';
+          return;
+        }
+
+        els.list.className = 'list';
+        els.list.innerHTML = visible.map(function (w, i) {
+          var modulesStr = w.modules.join('  &middot;  ');
+          return '' +
+            '<a class="ws" href="' + esc(w.url) + '">' +
+              '<span class="ws-idx">' + pad(i + 1) + '</span>' +
+              '<img class="ws-logo" src="' + esc(w.logo) + '" alt="' + esc(w.name) + ' logo" />' +
+              '<div class="ws-body">' +
+                '<div class="ws-title">' +
+                  '<span class="ws-name">' + esc(w.name) + '</span>' +
+                  '<span class="ws-cat">' + esc(w.category) + '</span>' +
+                '</div>' +
+                '<p class="ws-desc">' + esc(w.desc) + '</p>' +
+                '<div class="ws-modules"><b>MODULES&nbsp;&nbsp;</b>' + modulesStr + '</div>' +
+                '<div class="ws-status">' +
+                  '<span class="ws-domain">' + esc(w.domain) + '</span>' +
+                  '<span class="ws-op"><span></span>OPERATIONAL</span>' +
+                '</div>' +
+              '</div>' +
+              '<span class="ws-arrow">&rarr;</span>' +
+            '</a>';
+        }).join('');
+      }
+
+      // ── Clock ──
+      var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      function tick() {
+        var d = new Date();
+        els.clock.textContent = pad(d.getDate()) + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear() +
+          ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+      }
+
+      // ── Events ──
+      els.search.addEventListener('input', function (e) { query = e.target.value; render(); });
+      els.light.addEventListener('click', function () { setDark(false); });
+      els.dark.addEventListener('click', function () { setDark(true); });
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          if (query) { query = ''; els.search.value = ''; render(); }
+          els.search.blur();
+          return;
+        }
+        var tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) els.search.focus();
+      });
+
+      // ── Init ──
+      els.year.textContent = new Date().getFullYear();
+      initTheme();
+      render();
+      tick();
+      setInterval(tick, 1000);
+    })();
+  </script>
+</body>
+</html>
